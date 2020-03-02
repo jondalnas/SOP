@@ -46,7 +46,6 @@ namespace Arduino_Timer {
 				uint samples = baud;
 				var sw = System.Diagnostics.Stopwatch.StartNew();
 				for (int i = 0; i < samples; i++) {
-					port.Write(new byte[] { 170 }, 0, 1);
 					port.ReadByte();
 				}
 				sw.Stop();

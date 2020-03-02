@@ -10,8 +10,7 @@ void loop() {
     Serial.flush();
     Serial.begin(baud);
     for (uint32_t i = 0; i < baud; i++) {
-      while(!Serial.available());
-      Serial.print((char) Serial.read());
+      Serial.print(0b10101010);
     }
   }
 }
