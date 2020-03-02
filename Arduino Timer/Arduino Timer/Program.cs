@@ -36,23 +36,16 @@ namespace Arduino_Timer {
 			port = new SerialPort(ports[intPortChoice], intBaudChoice, Parity.None, 8, StopBits.One);
 			port.Open();
 
-			Thread thread = new Thread(Read);
-			thread.Start();
-
-			message:
-			Console.Write(">");
-
-			port.Write(Console.ReadLine());
-
-			Thread.Sleep(1000);
-
-			goto message;
-		}
-
-		public static void Read() {
-			while (true) {
-				Console.Write((char) port.ReadChar());
+			uint samples = 1000;
+			var sw = System.Diagnostics.Stopwatch.StartNew();
+			for (int i = 0; i < samples; i++) {
+				port.Write(new byte[] { 170 }, 0, 1);
+				port.ReadByte();
 			}
+			sw.Stop();
+			Console.WriteLine("It took " + (sw.ElapsedMilliseconds / 1000.0) + " seconds");
+
+			Console.ReadLine();
 		}
 	}
 }
