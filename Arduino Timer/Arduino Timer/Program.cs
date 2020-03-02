@@ -34,35 +34,55 @@ namespace Arduino_Timer {
 			int intBaudChoice;
 			if (!Int32.TryParse(baudChoice, out intBaudChoice)) goto baud;*/
 
-			port = new SerialPort(ports[intPortChoice], 300, Parity.None, 8, StopBits.One);
+			port = new SerialPort(ports[intPortChoice], 9600, Parity.None, 8, StopBits.One);
 			port.Open();
 
-			StringBuilder csv = new StringBuilder();
+			port.Write(" ");
 
-			uint[] bauds = { 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 76800, 115200, 230400, 250000, 500000 };
-			for (int baudI = 1; baudI < 17; baudI++) {
-				uint baud = bauds[baudI - 1];
+			//string csv = "Baud,2 byte (sec),4 byte (sec),8 byte (sec)\n";
+			string csv = "";
 
-				uint samples = baud;
-				var sw = System.Diagnostics.Stopwatch.StartNew();
-				for (int i = 0; i < samples; i++) {
-					port.ReadByte();
-				}
-				sw.Stop();
-				Console.WriteLine(baud + "," + ((sw.ElapsedMilliseconds / 1000.0) / samples));
-
-				csv.AppendLine(baud + "," + ((sw.ElapsedMilliseconds / 1000.0) / samples));
-
-				port.Close();
-				port.BaudRate = (int)bauds[baudI];
-				port.Open();
-			}
-
-			File.WriteAllText("Data.csv", csv.ToString());
-
-			Console.ReadLine();
+			//uint[] bauds = { /*300, 600, 1200, 2400, 4800, */9600, 14400, 19200, 28800, 38400, 57600, 76800, 115200, 230400, 250000, 500000 };
+			//for (int baudI = 1; baudI < 11; baudI++) {
+			//	uint baud = bauds[baudI - 1];
+			uint baud = 9600;
+			csv += baud;
+			Console.Write(baud);
 
 			port.Close();
+			port.BaudRate = (int) baud;
+			port.Open();
+
+			uint samples = baud;
+
+			for (int bytes = 0; bytes < 3; bytes++) {
+				//port.Write(" ");
+
+				var sw = System.Diagnostics.Stopwatch.StartNew();
+				char chr = ' ';
+				while ((chr = (char) port.ReadByte()) != ';' && chr != 0) {
+					if (bytes == 1) port.ReadByte();
+					else if (bytes == 2) {
+						port.ReadByte();
+						port.ReadByte();
+					}
+				}
+				sw.Stop();
+				Console.Write("," + ((sw.ElapsedMilliseconds / 1000.0) / samples));
+
+				csv += "," + ((sw.ElapsedMilliseconds / 1000.0) / samples);
+			}
+
+			csv += "\n";
+			Console.Write("\n");
+
+			port.Close();
+
+			File.AppendAllText("Data.csv", csv.ToString());
+			
+			port.Close();
+
+			Console.ReadLine();
 		}
 	}
 }
