@@ -37,52 +37,51 @@ namespace Arduino_Timer {
 			port = new SerialPort(ports[intPortChoice], 9600, Parity.None, 8, StopBits.One);
 			port.Open();
 
-			port.Write(" ");
+			string csv = "Baud,2 byte (sec)\n";
+			
+			uint[] bauds = { 9600, 14400, 19200, 38400, 57600, 76800, 115200, 230400, 250000, 500000, 1000000, 2000000 };
+			for (int baudI = 0; baudI < 12; baudI++) {
+				uint baud = bauds[baudI];
+				Handshake(baudI, baud);
 
-			//string csv = "Baud,2 byte (sec),4 byte (sec),8 byte (sec)\n";
-			string csv = "";
+				Console.Write(baud);
+				csv += baud;
 
-			//uint[] bauds = { /*300, 600, 1200, 2400, 4800, */9600, 14400, 19200, 28800, 38400, 57600, 76800, 115200, 230400, 250000, 500000 };
-			//for (int baudI = 1; baudI < 11; baudI++) {
-			//	uint baud = bauds[baudI - 1];
-			uint baud = 9600;
-			csv += baud;
-			Console.Write(baud);
+				uint samples = baud<<2;
 
-			port.Close();
-			port.BaudRate = (int) baud;
-			port.Open();
-
-			uint samples = baud;
-
-			for (int bytes = 0; bytes < 3; bytes++) {
-				//port.Write(" ");
-
+				char chr;
+				uint curr = 0;
 				var sw = System.Diagnostics.Stopwatch.StartNew();
-				char chr = ' ';
-				while ((chr = (char) port.ReadByte()) != ';' && chr != 0) {
-					if (bytes == 1) port.ReadByte();
-					else if (bytes == 2) {
-						port.ReadByte();
-						port.ReadByte();
+				while ((chr = (char)port.ReadChar()) != 0) {
+					curr = (curr % 9) + 1;
+
+					if (curr != (int)chr) {
+						Console.WriteLine(baud + ", E: " + (int)chr);
+						curr = (uint)chr;
 					}
 				}
 				sw.Stop();
-				Console.Write("," + ((sw.ElapsedMilliseconds / 1000.0) / samples));
 
-				csv += "," + ((sw.ElapsedMilliseconds / 1000.0) / samples);
+				Console.Write("," + ((sw.ElapsedMilliseconds / 1000.0) / samples) + "\n");
+				csv += "," + ((sw.ElapsedMilliseconds / 1000.0) / samples) + "\n";
 			}
 
-			csv += "\n";
-			Console.Write("\n");
-
 			port.Close();
 
-			File.AppendAllText("Data.csv", csv.ToString());
-			
-			port.Close();
+			File.WriteAllText("Data.csv", csv.ToString());
 
 			Console.ReadLine();
+		}
+
+		private static void Handshake(int baudI, uint baud) {
+			while (port.ReadByte() != baudI);
+
+			port.DiscardInBuffer();
+			port.Close();
+			port.BaudRate = (int)baud;
+			port.Open();
+
+			port.Write(new Byte[] { (byte)baudI }, 0, 1);
 		}
 	}
 }
